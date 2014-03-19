@@ -17,11 +17,26 @@ endif(NOT CMAKE_CONFIGURATION_TYPES)
 ## build settings
 
 add_definitions(-std=c++0x)
-add_definitions(-DBOOST_ALL_NO_LIB)
 
-set(BLOCKS_BOOST_COMPONENTS thread date_time system asio)
-find_package(Boost COMPONENTS ${BLOCKS_BOOST_COMPONENTS} QUIET)
+set(BLOCKS_BOOST_COMPONENTS regex thread date_time system python)
+
+if(WIN32 OR APPLE)
+    set(Boost_USE_STATIC_LIBS TRUE)
+else(WIN32 OR APPLE)
+    set(Boost_USE_STATIC_LIBS ${OGRE_STATIC})
+endif(WIN32 OR APPLE)
+if(MINGW)
+    set(CMAKE_FIND_LIBRARY_PREFIXES ${CMAKE_FIND_LIBRARY_PREFIXES} "")
+endif(MINGW)
+
+find_package(Boost COMPONENTS ${BLOCKS_BOOST_COMPONENTS} REQUIRED)
+if(NOT Boost_FOUND)
+    set(Boost_USE_STATIC_LIBS NOT ${Boost_USE_STATIC_LIBS})
+    find_package(Boost COMPONENTS ${BLOCKS_BOOST_COMPONENTS} REQUIRED)
+endif(NOT Boost_FOUND)
 find_package(Boost REQUIRED)
+
+add_definitions(-DBOOST_ALL_NO_LIB)
 
 if(WIN32)
     set(CMAKE_MODULE_PATH "$ENV{OGRE_HOME}/CMake/;${CMAKE_MODULE_PATH}")
@@ -78,6 +93,7 @@ endif(UNIX)
 
 set_target_properties(blocks PROPERTIES DEBUG_POSTFIX _d)
 target_link_libraries(blocks
+    ${Boost_LIBRARIES}
     ${OGRE_LIBRARIES}
     ${OIS_LIBRARIES}
     ${OGRE_Overlay_LIBRARIES}
